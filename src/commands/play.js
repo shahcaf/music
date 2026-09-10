@@ -100,9 +100,10 @@ module.exports = {
             }
 
             // ── Search via Lavalink ─────────────────────────────────────────
-            // If user pasted a direct URL (SoundCloud, YouTube, Spotify, etc.)
+            // Prefer a direct URL so the resolver does not select an incompatible
+            // media source when the YouTube Data API found an exact result.
             let res = null;
-            if (isUrl) {
+            if (isUrl || resolvedUrl) {
                 res = await player.search({ query: resolvedUrl }, interaction.user);
                 console.log(`[LAVALINK SEARCH] Direct URL LoadType=${res?.loadType}, Tracks=${res?.tracks?.length ?? 0}`);
             }
