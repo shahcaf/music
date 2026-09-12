@@ -8,12 +8,12 @@ module.exports = {
     async execute(interaction) {
         if (!checkVoiceChannel(interaction)) return;
 
-        const player = interaction.client.lavalink.getPlayer(interaction.guildId);
-        if (!player || !player.connected) {
-            return interaction.reply({ content: '❌ No active player in this server!', ephemeral: true });
+        const queue = interaction.client.distube.getQueue(interaction.guildId);
+        if (!queue) {
+            return interaction.reply({ content: '❌ No active music queue in this server!', ephemeral: true });
         }
 
-        await player.destroy();
+        await queue.stop();
         return interaction.reply({ content: '⏹️ Stopped playback, cleared queue, and disconnected!' });
     }
 };

@@ -8,18 +8,18 @@ module.exports = {
     async execute(interaction) {
         if (!checkVoiceChannel(interaction)) return;
 
-        const player = interaction.client.lavalink.getPlayer(interaction.guildId);
-        if (!player || !player.connected) {
-            return interaction.reply({ content: '❌ No active player in this server!', ephemeral: true });
+        const queue = interaction.client.distube.getQueue(interaction.guildId);
+        if (!queue || !queue.songs || queue.songs.length === 0) {
+            return interaction.reply({ content: '❌ No active music queue in this server!', ephemeral: true });
         }
 
-        const count = player.queue.tracks.length;
+        const count = queue.songs.length - 1; // exclude currently playing
         if (count === 0) {
-            return interaction.reply({ content: '❌ The queue is already empty!', ephemeral: true });
+            return interaction.reply({ content: '❌ No upcoming tracks to clear! Only the current song is playing.', ephemeral: true });
         }
 
-        // Clear upcoming tracks array
-        player.queue.tracks.splice(0, player.queue.tracks.length);
+        // Remove all tracks except the currently playing one (index 0)
+        queue.songs.splice(1, count);
 
         return interaction.reply({
             content: `🧹 Cleared **${count} queued track(s)**! Currently playing song will keep playing.`

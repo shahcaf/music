@@ -4,39 +4,38 @@ const { checkVoiceChannel } = require('../utils/embeds');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('loop')
-        .setDescription('Configure queue or song looping mode')
+        .setDescription('Set repeat mode: off, song, or queue')
         .addStringOption(option =>
             option.setName('mode')
-                .setDescription('Loop mode to set')
+                .setDescription('Repeat mode selection')
                 .setRequired(true)
                 .addChoices(
                     { name: 'Off', value: 'off' },
-                    { name: 'Song (Track)', value: 'song' },
+                    { name: 'Song', value: 'song' },
                     { name: 'Queue', value: 'queue' }
                 )
         ),
     async execute(interaction) {
         if (!checkVoiceChannel(interaction)) return;
 
-        const player = interaction.client.lavalink.getPlayer(interaction.guildId);
-        if (!player || !player.connected) {
-            return interaction.reply({ content: '❌ No active player in this server!', ephemeral: true });
+        const queue = interaction.client.distube.getQueue(interaction.guildId);
+        if (!queue) {
+            return interaction.reply({ content: '❌ No active music queue in this server!', ephemeral: true });
         }
 
-        const modeOption = interaction.options.getString('mode');
-        let lavalinkMode = 'off';
-        let modeLabel = 'Off';
+        const modeStr = interaction.options.getString('mode');
+        let modeNum = 0;
+        let modeDisplay = 'Off';
 
-        if (modeOption === 'song') {
-            lavalinkMode = 'track';
-            modeLabel = '🔂 Song (Single Track)';
-        } else if (modeOption === 'queue') {
-            lavalinkMode = 'queue';
-            modeLabel = '🔁 Whole Queue';
+        if (modeStr === 'song') {
+            modeNum = 1;
+            modeDisplay = '🔂 Song';
+        } else if (modeStr === 'queue') {
+            modeNum = 2;
+            modeDisplay = '🔁 Queue';
         }
 
-        await player.setRepeatMode(lavalinkMode);
-
-        return interaction.reply({ content: `🔁 Loop mode configured to: **${modeLabel}**!` });
+        queue.setRepeatMode(modeNum);
+        return interaction.reply({ content: `🔁 Loop mode updated to: **${modeDisplay}**!` });
     }
 };

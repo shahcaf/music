@@ -8,17 +8,12 @@ module.exports = {
     async execute(interaction) {
         if (!checkVoiceChannel(interaction)) return;
 
-        const player = interaction.client.lavalink.getPlayer(interaction.guildId);
-        if (!player || !player.connected) {
-            return interaction.reply({ content: '❌ No active player in this server!', ephemeral: true });
+        const queue = interaction.client.distube.getQueue(interaction.guildId);
+        if (!queue || !queue.songs || queue.songs.length <= 1) {
+            return interaction.reply({ content: '❌ Not enough tracks in queue to shuffle!', ephemeral: true });
         }
 
-        if (player.queue.tracks.length === 0) {
-            return interaction.reply({ content: '❌ The queue is empty, nothing to shuffle!', ephemeral: true });
-        }
-
-        await player.queue.shuffle();
-
-        return interaction.reply({ content: `🔀 Successfully shuffled **${player.queue.tracks.length} track(s)** in the queue!` });
+        await queue.shuffle();
+        return interaction.reply({ content: '🔀 Queue shuffled successfully!' });
     }
 };

@@ -8,20 +8,16 @@ module.exports = {
     async execute(interaction) {
         if (!checkVoiceChannel(interaction)) return;
 
-        const player = interaction.client.lavalink.getPlayer(interaction.guildId);
-        if (!player || !player.connected) {
-            return interaction.reply({ content: '❌ No active player in this server!', ephemeral: true });
+        const queue = interaction.client.distube.getQueue(interaction.guildId);
+        if (!queue) {
+            return interaction.reply({ content: '❌ No active music queue in this server!', ephemeral: true });
         }
 
-        if (player.paused) {
+        if (queue.paused) {
             return interaction.reply({ content: '⏸️ Playback is already paused!', ephemeral: true });
         }
 
-        if (!player.queue.current) {
-            return interaction.reply({ content: '❌ No track is currently playing!', ephemeral: true });
-        }
-
-        await player.pause();
+        queue.pause();
         return interaction.reply({ content: '⏸️ Paused the current song!' });
     }
 };

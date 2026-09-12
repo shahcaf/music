@@ -20,21 +20,31 @@ function formatDuration(ms) {
 }
 
 /**
- * Build Now Playing Embed
- * @param {object} track - Lavalink Track Object
- * @param {object} player - Lavalink Player Instance
+ * Build Now Playing Embed for DisTube or Lavalink song objects
+ * @param {object} song - Song/Track Object
+ * @param {object} queue - Queue Instance
  * @returns {EmbedBuilder}
  */
-function buildNowPlayingEmbed(track, player) {
-    const title = track?.info?.title || 'Unknown Track';
-    const author = track?.info?.author || 'Unknown Artist';
-    const duration = formatDuration(track?.info?.duration);
-    const uri = track?.info?.uri || '';
-    const requester = track?.userData?.requester ? `<@${track.userData.requester.id}>` : 'Unknown';
-    const thumbnail = track?.info?.artworkUrl || track?.info?.pluginInfo?.artworkUrl || null;
-    const volume = player ? `${player.volume}%` : '100%';
-    const repeatMode = player?.repeatMode || 'off';
-    const loopStatus = repeatMode === 'track' ? '🔂 Song' : repeatMode === 'queue' ? '🔁 Queue' : 'Off';
+function buildNowPlayingEmbed(song, queue) {
+    const title = song?.name || song?.info?.title || 'Unknown Track';
+    const author = song?.uploader?.name || song?.artist || song?.info?.author || 'Unknown Artist';
+    const duration = song?.formattedDuration || formatDuration(song?.duration * 1000 || song?.info?.duration);
+    const uri = song?.url || song?.info?.uri || '';
+    
+    let requester = 'Unknown';
+    if (song?.user) {
+        requester = `<@${song.user.id}>`;
+    } else if (song?.member) {
+        requester = `<@${song.member.id}>`;
+    } else if (song?.userData?.requester) {
+        requester = `<@${song.userData.requester.id}>`;
+    }
+
+    const thumbnail = song?.thumbnail || song?.info?.artworkUrl || null;
+    const volume = queue ? `${queue.volume}%` : '100%';
+    
+    const repeatMode = queue?.repeatMode ?? 0;
+    const loopStatus = repeatMode === 1 ? '🔂 Song' : repeatMode === 2 ? '🔁 Queue' : 'Off';
 
     const embed = new EmbedBuilder()
         .setColor('#5865F2')
@@ -58,11 +68,11 @@ function buildNowPlayingEmbed(track, player) {
 
 /**
  * Build Now Playing Control Buttons Row
- * @param {object} player - Lavalink Player Instance
+ * @param {object} queue - Queue Instance
  * @returns {ActionRowBuilder}
  */
-function buildNowPlayingButtons(player) {
-    const isPaused = player?.paused || false;
+function buildNowPlayingButtons(queue) {
+    const isPaused = queue?.paused || false;
 
     const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()

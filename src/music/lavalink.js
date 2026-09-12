@@ -1,16 +1,5 @@
 const { LavalinkManager } = require('lavalink-client');
-const config = {
-    discord: {
-        token: process.env.DISCORD_TOKEN,
-        clientId: process.env.CLIENT_ID
-    },
-    lavalink: {
-        host: process.env.LAVALINK_HOST || 'localhost',
-        port: parseInt(process.env.LAVALINK_PORT || '2333', 10),
-        password: process.env.LAVALINK_PASSWORD || 'youshallnotpass',
-        secure: process.env.LAVALINK_SECURE === 'true'
-    }
-};
+const config = require('../config');
 
 /**
  * Initialize LavalinkManager for discord.js v14
@@ -27,12 +16,12 @@ function createLavalinkManager(client) {
                 secure: config.lavalink.secure,
                 id: 'main-node',
                 nodeType: 'Lavalink',
-                retryAmount: 20,
-                retryDelay: 5000,
+                retryAmount: 50,
+                retryDelay: 3000,
                 requestSignalTimeoutMS: 30000,
                 closeOnError: false,
-                heartBeatInterval: 30000,
-                enablePingOnStatsCheck: true
+                heartBeatInterval: 60000,
+                enablePingOnStatsCheck: false
             }
         ],
         sendToShard: (guildId, payload) => {

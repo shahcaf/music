@@ -2,15 +2,17 @@ const { Client, GatewayIntentBits, Collection } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 const config = require('./config');
-const { createLavalinkManager } = require('./music/lavalink');
-const { setupLavalinkEvents } = require('./events/lavalinkEvents');
+const { createDisTube } = require('./music/distube');
+const { setupDisTubeEvents } = require('./events/distubeEvents');
 const { handleButtonInteraction } = require('./events/buttonHandler');
 
 // 1. Initialize Discord Client with Voice & Guild intents
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildVoiceStates
+        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent
     ]
 });
 
@@ -29,28 +31,17 @@ for (const file of commandFiles) {
     }
 }
 
-// 3. Initialize Lavalink Manager & setup event handlers
-client.lavalink = createLavalinkManager(client);
-setupLavalinkEvents(client);
+// 3. Initialize DisTube for standalone audio streaming (0 external servers required)
+client.distube = createDisTube(client);
+setupDisTubeEvents(client);
 
-// 4. Forward raw Discord Gateway packets to Lavalink for Voice State management
-client.on('raw', (d) => {
-    client.lavalink.sendRawData(d);
-});
-
-// 5. Discord Ready Event
-client.once('ready', async () => {
+// 4. Discord Ready Event
+client.once('clientReady', async () => {
     console.log(`[DISCORD] Logged in as ${client.user.tag} (ID: ${client.user.id})`);
-    
-    // Initialize Lavalink Manager after client ready
-    await client.lavalink.init({
-        id: client.user.id,
-        username: client.user.username
-    });
-    console.log('[LAVALINK] LavalinkManager initialized successfully.');
+    console.log('[DISTUBE] Standalone DisTube Audio Engine initialized successfully.');
 });
 
-// 6. Interaction Create Event (Slash Commands & Button Controls)
+// 5. Interaction Create Event (Slash Commands & Button Controls)
 client.on('interactionCreate', async (interaction) => {
     // Handle Button Interactions
     if (interaction.isButton()) {
@@ -80,7 +71,7 @@ client.on('interactionCreate', async (interaction) => {
         console.error(`[COMMAND ERROR] Error executing command /${interaction.commandName}:`, error);
         const replyPayload = {
             content: '❌ There was an error executing this command!',
-            flags: (1 << 6) // ephemeral via flags (avoids deprecation warning)
+            flags: (1 << 6) // ephemeral via flags
         };
         if (interaction.replied || interaction.deferred) {
             await interaction.followUp(replyPayload).catch(() => {});
@@ -90,7 +81,7 @@ client.on('interactionCreate', async (interaction) => {
     }
 });
 
-// 7. Global Unhandled Rejection / Error Handling
+// 6. Global Unhandled Rejection / Error Handling
 process.on('unhandledRejection', (reason, promise) => {
     console.error('[UNHANDLED REJECTION] Unhandled Promise Rejection:', reason);
 });
@@ -99,7 +90,7 @@ process.on('uncaughtException', (error) => {
     console.error('[UNCAUGHT EXCEPTION] Uncaught Exception:', error);
 });
 
-// 8. Log into Discord
+// 7. Log into Discord
 if (!config.discord.token) {
     console.error('[CRITICAL] DISCORD_TOKEN is missing in .env! Cannot start bot.');
     process.exit(1);

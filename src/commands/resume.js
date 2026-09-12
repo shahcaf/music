@@ -4,20 +4,20 @@ const { checkVoiceChannel } = require('../utils/embeds');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('resume')
-        .setDescription('Resume playback if paused'),
+        .setDescription('Resume the paused song'),
     async execute(interaction) {
         if (!checkVoiceChannel(interaction)) return;
 
-        const player = interaction.client.lavalink.getPlayer(interaction.guildId);
-        if (!player || !player.connected) {
-            return interaction.reply({ content: '❌ No active player in this server!', ephemeral: true });
+        const queue = interaction.client.distube.getQueue(interaction.guildId);
+        if (!queue) {
+            return interaction.reply({ content: '❌ No active music queue in this server!', ephemeral: true });
         }
 
-        if (!player.paused) {
-            return interaction.reply({ content: '▶️ Playback is already running!', ephemeral: true });
+        if (!queue.paused) {
+            return interaction.reply({ content: '▶️ Playback is already playing!', ephemeral: true });
         }
 
-        await player.resume();
-        return interaction.reply({ content: '▶️ Resumed playback!' });
+        queue.resume();
+        return interaction.reply({ content: '▶️ Resumed the current song!' });
     }
 };

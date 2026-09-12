@@ -8,17 +8,19 @@ module.exports = {
     async execute(interaction) {
         if (!checkVoiceChannel(interaction)) return;
 
-        const player = interaction.client.lavalink.getPlayer(interaction.guildId);
-        if (!player || !player.connected) {
-            return interaction.reply({ content: '❌ No active player in this server!', ephemeral: true });
-        }
-
-        if (!player.queue.current) {
+        const queue = interaction.client.distube.getQueue(interaction.guildId);
+        if (!queue || !queue.songs || queue.songs.length === 0) {
             return interaction.reply({ content: '❌ Nothing is currently playing to skip!', ephemeral: true });
         }
 
-        const currentTrackTitle = player.queue.current.info.title;
-        await player.skip();
+        const currentTrackTitle = queue.songs[0].name;
+
+        if (queue.songs.length === 1 && queue.repeatMode === 0) {
+            queue.stop();
+            return interaction.reply({ content: `⏭️ Skipped **${currentTrackTitle}**! Stopped queue.` });
+        }
+
+        await queue.skip();
         return interaction.reply({ content: `⏭️ Skipped **${currentTrackTitle}**!` });
     }
 };

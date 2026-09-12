@@ -8,12 +8,12 @@ module.exports = {
     async execute(interaction) {
         if (!checkVoiceChannel(interaction)) return;
 
-        const player = interaction.client.lavalink.getPlayer(interaction.guildId);
-        if (!player) {
+        const queue = interaction.client.distube.getQueue(interaction.guildId);
+        if (!queue) {
             return interaction.reply({ content: '❌ The bot is not currently in a voice channel!', ephemeral: true });
         }
 
-        await player.destroy();
-        return interaction.reply({ content: '👋 Disconnected from the voice channel!' });
+        await queue.stop();
+        return interaction.reply({ content: '👋 Disconnected from the voice channel and cleared the queue!' });
     }
 };

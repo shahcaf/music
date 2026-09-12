@@ -15,13 +15,13 @@ module.exports = {
     async execute(interaction) {
         if (!checkVoiceChannel(interaction)) return;
 
-        const player = interaction.client.lavalink.getPlayer(interaction.guildId);
-        if (!player || !player.connected) {
-            return interaction.reply({ content: '❌ No active player in this server!', ephemeral: true });
+        const queue = interaction.client.distube.getQueue(interaction.guildId);
+        if (!queue) {
+            return interaction.reply({ content: '❌ No active music queue in this server!', ephemeral: true });
         }
 
         const newVolume = interaction.options.getInteger('level');
-        await player.setVolume(newVolume);
+        queue.setVolume(newVolume);
 
         return interaction.reply({ content: `🔊 Playback volume changed to **${newVolume}%**!` });
     }

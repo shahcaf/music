@@ -1,4 +1,4 @@
-const { buildNowPlayingEmbed, buildNowPlayingButtons, checkVoiceChannel } = require('../utils/embeds');
+const { checkVoiceChannel } = require('../utils/embeds');
 
 /**
  * Handle Discord Button Interactions for playback control
@@ -15,10 +15,10 @@ async function handleButtonInteraction(interaction) {
     // Verify voice channel
     if (!checkVoiceChannel(interaction)) return;
 
-    const player = interaction.client.lavalink.getPlayer(interaction.guildId);
-    if (!player) {
+    const queue = interaction.client.distube.getQueue(interaction.guildId);
+    if (!queue) {
         return interaction.reply({
-            content: '❌ No active player in this server!',
+            content: '❌ No active music queue in this server!',
             ephemeral: true
         });
     }
@@ -26,55 +26,60 @@ async function handleButtonInteraction(interaction) {
     try {
         switch (customId) {
             case 'btn_pause_resume': {
-                if (player.paused) {
-                    await player.resume();
+                if (queue.paused) {
+                    queue.resume();
                     await interaction.reply({ content: '▶️ Playback resumed!', ephemeral: true });
                 } else {
-                    await player.pause();
+                    queue.pause();
                     await interaction.reply({ content: '⏸️ Playback paused!', ephemeral: true });
                 }
                 break;
             }
 
             case 'btn_skip': {
-                if (!player.queue.current) {
+                if (!queue.songs || queue.songs.length === 0) {
                     return interaction.reply({ content: '❌ Nothing is currently playing to skip!', ephemeral: true });
                 }
-                const currentTitle = player.queue.current.info.title;
-                await player.skip();
-                await interaction.reply({ content: `⏭️ Skipped **${currentTitle}**!`, ephemeral: true });
+                const currentTitle = queue.songs[0].name;
+                if (queue.songs.length === 1 && queue.repeatMode === 0) {
+                    queue.stop();
+                    await interaction.reply({ content: `⏭️ Skipped **${currentTitle}**! Stopped queue.`, ephemeral: true });
+                } else {
+                    await queue.skip();
+                    await interaction.reply({ content: `⏭️ Skipped **${currentTitle}**!`, ephemeral: true });
+                }
                 break;
             }
 
             case 'btn_stop': {
-                await player.destroy();
+                await queue.stop();
                 await interaction.reply({ content: '⏹️ Playback stopped, queue cleared, and disconnected!', ephemeral: true });
                 break;
             }
 
             case 'btn_shuffle': {
-                if (player.queue.tracks.length === 0) {
-                    return interaction.reply({ content: '❌ The queue is empty, cannot shuffle!', ephemeral: true });
+                if (!queue.songs || queue.songs.length <= 1) {
+                    return interaction.reply({ content: '❌ Not enough tracks in queue to shuffle!', ephemeral: true });
                 }
-                await player.queue.shuffle();
+                await queue.shuffle();
                 await interaction.reply({ content: '🔀 Queue shuffled successfully!', ephemeral: true });
                 break;
             }
 
             case 'btn_loop': {
-                const currentMode = player.repeatMode; // 'off' | 'track' | 'queue'
-                let newMode = 'track';
+                const currentMode = queue.repeatMode; // 0: off, 1: song, 2: queue
+                let newMode = 1;
                 let modeText = '🔂 Song';
 
-                if (currentMode === 'track') {
-                    newMode = 'queue';
+                if (currentMode === 1) {
+                    newMode = 2;
                     modeText = '🔁 Queue';
-                } else if (currentMode === 'queue') {
-                    newMode = 'off';
+                } else if (currentMode === 2) {
+                    newMode = 0;
                     modeText = 'Off';
                 }
 
-                await player.setRepeatMode(newMode);
+                queue.setRepeatMode(newMode);
                 await interaction.reply({ content: `🔁 Loop mode updated to: **${modeText}**!`, ephemeral: true });
                 break;
             }
